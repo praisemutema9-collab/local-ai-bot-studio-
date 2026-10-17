@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local AI Bot Studio - Offline</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.header{background:#1e293b;padding:16px;text-align:center;border-bottom:2px solid #334155}
+.header h1{font-size:22px;color:#38bdf8}
+.header p{font-size:13px;color:#94a3b8;margin-top:4px}
+.container{max-width:900px;margin:0 auto;padding:12px;display:grid;gap:12px}
+.card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155}
+.btn{background:#38bdf8;color:#0f172a;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+.btn-green{background:#22c55e}
+.btn-outline{background:transparent;color:#38bdf8;border:1px solid #38bdf8}
+input,textarea,select{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;margin-top:8px}
+.bots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bot-card{background:#0f172a;padding:12px;border-radius:10px;border:1px solid #334155;cursor:pointer}
+.bot-card.active{border-color:#38bdf8;background:#1e293b}
+.chat-box{height:350px;overflow-y:auto;background:#0f172a;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid #334155}
+.msg{padding:10px 12px;border-radius:10px;max-width:85%;font-size:14px;line-height:1.4}
+.user{align-self:flex-end;background:#38bdf8;color:#0f172a}
+.bot{align-self:flex-start;background:#334155;color:white}
+.row{display:flex;gap:8px;margin-top:10px}
+.status{font-size:11px;color:#22c55e;text-align:center;margin-top:6px}
+.lang-badge{font-size:10px;background:#38bdf8;color:#0f172a;padding:2px 6px;border-radius:10px;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>🤖 Local AI Bot Studio</h1>
+<p>100% Offline • No Internet Needed • No Credits • Shona & English</p>
+<div class="status">● LIVE OFFLINE - Data saved in your phone</div>
+</div>
+
+<div class="container">
+<div class="card">
+<h3>Your Bots</h3>
+<div class="bots" id="botsList"></div>
+<button class="btn btn-outline" onclick="showCreate()">+ Create New Bot</button>
+<div id="createBox" style="display:none;margin-top:12px">
+<input id="botName" placeholder="Bot name e.g. Shona Helper">
+<select id="botLang">
+<option value="shona">Shona</option>
+<option value="english">English</option>
+<option value="both">Shona & English</option>
+</select>
+<textarea id="botDesc" placeholder="What does this bot do? e.g. Helps farmers, Homework, etc"></textarea>
+<button class="btn btn-green" onclick="createBot()">Create Bot</button>
+</div>
+</div>
+
+<div class="card">
+<h3>Chat with: <span id="currentBotName">Select a bot</span> <span id="langBadge"></span></h3>
+<div class="chat-box" id="chatBox">
+<div class="msg bot">Mhoro! Hello! I am your offline bot. I work without internet. Sarudza bot uye tanga kutaura.</div>
+</div>
+<div class="row">
+<input id="userInput" placeholder="Nyora pano / Type here..." onkeypress="if(event.key==='Enter')send()">
+<button class="btn" style="width:80px;margin:0" onclick="send()">Send</button>
+</div>
+</div>
+
+<div class="card" style="font-size:12px;color:#94a3b8">
+<b>How it works offline:</b> All bots run inside your phone using keyword rules. No API, no credits, works in rural areas. Your chats are saved locally. Add knowledge in bot description to make it smarter.
+</div>
+</div>
+
+<script>
+const defaultBots=[
+{name:"Shona Mubatsiri",lang:"shona",desc:"Mubatsiri we varimi ne vadzidzi. Anopindura nezve kurima, chikoro, hutano.",keywords:{mhoro:"Mhoro sei! Ndiri pano kukubatsira.",kurima:"Kurima kwakanaka kunoda mvura, fetiraiza, uye nguva. Uri kurima chii?",chikoro:"Dzidza mazuva ose, verenga mabhuku, bvunza mudzidzisi.",mari:"Kuchengetedza mari kwakakosha. Nyora mari inopinda ne inobuda."}},
+{name:"English Tutor",lang:"english",desc:"Helps with English, school work, business ideas.",keywords:{hello:"Hello! How can I help you today?",school:"For school: read daily, make notes, practice past papers.",business:"Start small: sell what people need daily. Keep records.",farming:"Good farming needs planning, good seeds, and water management."}},
+{name:"Shona-English Translator",lang:"both",desc:"Translates Shona to English and English to Shona offline.",keywords:{mhoro:"Mhoro = Hello",maswera:"Maswera = Good afternoon",mangwanani:"Mangwanani = Good morning",tatenda:"Tatenda = Thank you",mvura:"Mvura = Water/Rain"}}
+];
+let bots=JSON.parse(localStorage.getItem('localBots')||'null')||defaultBots;
+let activeBot=bots[0];
+
+function save(){localStorage.setItem('localBots',JSON.stringify(bots))}
+function renderBots(){
+const list=document.getElementById('botsList');
+list.innerHTML='';
+bots.forEach((b,i)=>{
+const d=document.createElement('div');
+d.className='bot-card'+(activeBot.name===b.name?' active':'');
+d.innerHTML=`<b>${b.name}</b><br><small>${b.lang} • ${b.desc.slice(0,40)}...</small>`;
+d.onclick=()=>{activeBot=b;renderBots();document.getElementById('currentBotName').innerText=b.name;document.getElementById('langBadge').innerHTML=`<span class="lang-badge">${b.lang}</span>`;document.getElementById('chatBox').innerHTML=`<div class="msg bot">Hi! I am ${b.name}. ${b.desc}</div>`};
+list.appendChild(d);
+});
+document.getElementById('currentBotName').innerText=activeBot.name;
+}
+function showCreate(){document.getElementById('createBox').style.display=document.getElementById('createBox').style.display==='none'?'block':'none'}
+function createBot(){
+const name=document.getElementById('botName').value.trim();
+const lang=document.getElementById('botLang').value;
+const desc=document.getElementById('botDesc').value.trim();
+if(!name||!desc){alert('Add name and description');return}
+const newBot={name,lang,desc,keywords:{}};
+desc.toLowerCase().split(/[,.\n ]+/).forEach(w=>{if(w.length>3)newBot.keywords[w]="I know about "+w+": "+desc});
+bots.push(newBot);save();renderBots();
+document.getElementById('botName').value='';document.getElementById('botDesc').value='';
+document.getElementById('createBox').style.display='none';
+}
+function getReply(text){
+const t=text.toLowerCase();
+const kb=activeBot.keywords||{};
+for(let k in kb){if(t.includes(k.toLowerCase()))return kb[k]}
+if(activeBot.lang==='shona'||activeBot.lang==='both'){
+if(t.includes('mhoro')||t.includes('hesi'))return 'Mhoro! Ndiri zvakanaka. Ungabatsirwa nei?';
+if(t.includes('zvakanaka')||t.includes('bhoo'))return 'Ndatenda! Ndafara kunzwa.';
+if(t.includes('zvipfuyo')||t.includes('mombe'))return 'Kuchengeta zvipfuyo kunoda chikafu chakanaka, mvura yakachena, ne majekiseni.';
+}
+return activeBot.desc+" - "+(activeBot.lang==='shona'?"Ndinokubatsira ne: "+Object.keys(kb).slice(0,5).join(', '):"I can help with: "+Object.keys(kb).slice(0,5).join(', ')+". Try asking about those.");
+}
+function send(){
+const input=document.getElementById('userInput');
+const txt=input.value.trim();if(!txt)return;
+const box=document.getElementById('chatBox');
+box.innerHTML+=`<div class="msg user">${txt}</div>`;
+input.value='';
+setTimeout(()=>{
+box.innerHTML+=`<div class="msg bot">${getReply(txt)}</div>`;
+box.scrollTop=box.scrollHeight;
+},300);
+box.scrollTop=box.scrollHeight;
+}
+renderBots();
+</script>
+</body>
+</html>
